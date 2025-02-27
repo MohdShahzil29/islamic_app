@@ -14,7 +14,7 @@ export default function Footer() {
       onPress={() => router.push("/(tab)/Fatwa")}
       />
       <Entypo name="man" size={width * 0.07} style={styles.icon} color="#4CAF50" 
-      
+      onPress={() => router.push("/(qibla)/Qibla")}
       />
       <Feather name="bookmark" size={width * 0.07} style={styles.icon} color="#8BC34A" />
       <FontAwesome name="hands-helping" size={width * 0.07} style={styles.icon} color="#4CAF50" />

@@ -36,6 +36,13 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "fonts": {
+      "Scheherazade": "./assets/fonts/Scheherazade-Regular.ttf",
+      "Jameel Noori Nastaleeq": "./assets/fonts/JameelNooriNastaleeq.ttf",
+      "Roboto": "./assets/fonts/Roboto-Regular.ttf",
+      "Roboto-Medium": "./assets/fonts/Roboto-Medium.ttf",
+      "Roboto-Bold": "./assets/fonts/Roboto-Bold.ttf"
     }
   }
 }

@@ -3,6 +3,7 @@ import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions
 import { Feather } from "@expo/vector-icons";
 import QuranImage from "@/assets/Quran2.png";
 import axios from 'axios';
+import { router } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
@@ -77,7 +78,14 @@ export default function Home() {
           <Text style={styles.messageText}>No surahs found</Text>
         ) : (
           surah.map((surahItem: Surah) => (
-            <TouchableOpacity key={surahItem._id} style={styles.surahContainer}>
+            <TouchableOpacity 
+              key={surahItem._id} 
+              style={styles.surahContainer}
+              onPress={() => router.push({
+                pathname: "/(details)/SurahDetails",
+                params: { id: surahItem._id }
+              })}
+            >
               <View style={styles.surahInfo}>
                 <View style={styles.surahNumberContainer}>
                   <Text style={styles.surahNumber}>{surahItem.number}</Text>

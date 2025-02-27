@@ -17,7 +17,7 @@ router.post('/create', createSurah);
 router.get('/get-all', getAllSurahs);
 
 // Get a single Surah by ID
-router.get('/:id', getSurahById);
+router.get('/getbyId/:id', getSurahById);
 
 // Get Surah by number
 router.get('/number/:number', getSurahByNumber);
