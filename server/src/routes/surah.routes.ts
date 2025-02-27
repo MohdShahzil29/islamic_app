@@ -14,7 +14,7 @@ const router = Router();
 router.post('/create', createSurah);
 
 // Get all Surahs
-router.get('/', getAllSurahs);
+router.get('/get-all', getAllSurahs);
 
 // Get a single Surah by ID
 router.get('/:id', getSurahById);

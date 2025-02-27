@@ -1,31 +1,52 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import QuranImage from "@/assets/Quran2.png";
+import axios from 'axios';
 
 const { width } = Dimensions.get("window");
 
-export default function Home() {
-  const surahs = [
-    "Al-Fatiah", "Al-Baqarah", "Al 'Imran", "An-Nisa", "Al-Tawbah",
-    "Yunus", "Hud", "Yusuf", "Ar-Ra'd", "Ibrahim", "Al-Hijr",
-    "An-Nahl", "Al-Isra", "Al-Kahf"
-  ];
+interface Surah {
+  _id: string;
+  number: number;
+  nameArabic: string;
+  nameEnglish: string;
+  revelationType: string;
+  totalVerses: number;
+}
 
-  const arabicSurahs = [
-    "الفاتحة", "البقرة", "آل عمران", "النساء", "التوبة",
-    "يونس", "هود", "يوسف", "الرعد", "إبراهيم", "الحجر",
-    "النحل", "الإسراء", "الكهف"
-  ];
+export default function Home() {
+  const [surah, setSurah] = useState<Surah[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const getAllSurah = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await axios.get(`http://192.168.37.77:5000/api/surahs/get-all`);
+      if (res.data.success && Array.isArray(res.data.data)) {
+        setSurah(res.data.data);
+      } else {
+        setError('Invalid data format received from server');
+      }
+    } catch (error) {
+      console.error(error);
+      setError('Failed to fetch surahs');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    getAllSurah();
+  }, []);
 
   return (
     <View style={styles.container}>
-     
-
       {/* Greeting and User Name */}
       <View style={styles.greetingContainer}>
         <Text style={styles.greeting}>Asslamualaikum</Text>
-        <Text style={styles.userName}>Tanvir Ahassan</Text>
       </View>
 
       {/* Last Read Section */}
@@ -39,31 +60,39 @@ export default function Home() {
       </View>
 
       {/* Tabs */}
-      <View style={styles.tabsContainer}>
+      {/* <View style={styles.tabsContainer}>
         <Text style={styles.activeTab}>Surah</Text>
         <Text style={styles.inactiveTab}>Para</Text>
         <Text style={styles.inactiveTab}>Page</Text>
         <Text style={styles.inactiveTab}>Hijb</Text>
-      </View>
+      </View> */}
 
       {/* Scrollable Surah List */}
       <ScrollView style={styles.scrollContainer}>
-        {surahs.map((surah, index) => (
-          <TouchableOpacity key={index} style={styles.surahContainer}>
-            <View style={styles.surahInfo}>
-              <View style={styles.surahNumberContainer}>
-                <Text style={styles.surahNumber}>{index + 1}</Text>
+        {loading ? (
+          <Text style={styles.messageText}>Fetching Data...</Text>
+        ) : error ? (
+          <Text style={styles.messageText}>{error}</Text>
+        ) : surah.length === 0 ? (
+          <Text style={styles.messageText}>No surahs found</Text>
+        ) : (
+          surah.map((surahItem: Surah) => (
+            <TouchableOpacity key={surahItem._id} style={styles.surahContainer}>
+              <View style={styles.surahInfo}>
+                <View style={styles.surahNumberContainer}>
+                  <Text style={styles.surahNumber}>{surahItem.number}</Text>
+                </View>
+                <View style={styles.surahTextContainer}>
+                  <Text style={styles.surahName} numberOfLines={1}>{surahItem.nameEnglish}</Text>
+                  <Text style={styles.surahDetails}>
+                    {surahItem.revelationType} • {surahItem.totalVerses} Verses
+                  </Text>
+                </View>
               </View>
-              <View style={styles.surahTextContainer}>
-                <Text style={styles.surahName} numberOfLines={1}>{surah}</Text>
-                <Text style={styles.surahDetails}>
-                  {index === 1 ? "Medinian" : "Meccan"} • {index === 1 ? 286 : index === 2 ? 200 : index === 3 ? 176 : 7} Verses
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.arabicSurahName}>{arabicSurahs[index]}</Text>
-          </TouchableOpacity>
-        ))}
+              <Text style={styles.arabicSurahName}>{surahItem.nameArabic}</Text>
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -82,12 +111,6 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 18,
     color: "#555",
-    fontFamily: "Georgia",
-  },
-  userName: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#333",
     fontFamily: "Georgia",
   },
   lastReadContainer: {
@@ -202,5 +225,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     fontFamily: "Georgia",
+  },
+  messageText: {
+    fontSize: 18,
+    color: "#555",
+    fontFamily: "Georgia",
+    textAlign: "center",
+    padding: 20,
   },
 });

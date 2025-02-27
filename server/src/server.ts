@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import connectDB from './config/db';
 import surahRoutes from './routes/surah.routes';
+import morgan from 'morgan'
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ connectDB();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(morgan("dev"))
 
 // Routes
 app.use('/api/surahs', surahRoutes);

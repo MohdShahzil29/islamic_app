@@ -10,6 +10,7 @@ export interface ISurah extends Document {
   detailsArabi: string,
   detailsUrdu: string;
   totalVerses: number;
+  tafseer: string;
   revelationType: string;
   chapterNumber: number;
   juzNumbers: number[];
@@ -92,6 +93,10 @@ const SurahSchema = new Schema<ISurah>({
   },
   rukuCount: {
     type: Number,
+    required: true,
+  },
+  tafseer: {
+    type: String,
     required: true,
   }
 }, {
