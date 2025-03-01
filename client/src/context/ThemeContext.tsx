@@ -7,7 +7,6 @@ interface ThemeContextType {
   toggleTheme: () => void;
   theme: typeof lightTheme;
 }
-// backgroundColor: "rgba(255,255,255,0.1)",
 export const lightTheme = {
   background: '#FFFFFF',
   text: '#000000',

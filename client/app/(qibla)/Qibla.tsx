@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, Image, Animated, Easing } from 'react-native';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { StyleSheet, Text, View, Animated, Easing, Dimensions } from 'react-native';
 import * as Location from 'expo-location';
 import { Magnetometer, MagnetometerMeasurement } from 'expo-sensors';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/src/context/ThemeContext';
 
+const { width } = Dimensions.get("window");
 const MAGNETOMETER_ANGLE_OFFSET = 260;
 
 const sanitizeCoordinate = (coord: number | string): number => {
@@ -24,6 +26,7 @@ const QiblaPage: React.FC = () => {
   const [deviceHeading, setDeviceHeading] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const arrowRotationAnim = useRef(new Animated.Value(0)).current;
+  const { theme } = useTheme();
 
   const requestLocationPermission = async (): Promise<void> => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -107,156 +110,133 @@ const QiblaPage: React.FC = () => {
       : 0;
   const isQiblaFound: boolean = qiblaDirection !== null && angularDiff < 10;
 
+  // Dynamic styles with dark mode and responsiveness
+  const dynamicStyles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+      padding: width * 0.05,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    heading: {
+      fontSize: width * 0.075,
+      fontWeight: "800",
+      color: theme.text,
+      marginBottom: width * 0.06,
+      textShadowColor: '#ccc',
+      textShadowOffset: { width: 1, height: 1 },
+      textShadowRadius: 2,
+    },
+    contentContainer: {
+      alignItems: "center",
+    },
+    compassContainer: {
+      width: width * 0.65,
+      height: width * 0.65,
+      borderRadius: (width * 0.65) / 2,
+      borderWidth: 3,
+      borderColor: theme.text,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: width * 0.05,
+      backgroundColor: "rgba(0,0,0,0.05)",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: width * 0.03 },
+      shadowOpacity: 0.1,
+      shadowRadius: width * 0.03,
+      elevation: 5,
+    },
+    dial: {
+      position: "absolute",
+      width: "100%",
+      height: "100%",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    cardinal: {
+      position: "absolute",
+      fontSize: width * 0.05,
+      fontWeight: "bold",
+      color: theme.text,
+    },
+    north: {
+      top: width * 0.04,
+      alignSelf: "center",
+    },
+    south: {
+      bottom: width * 0.04,
+      alignSelf: "center",
+    },
+    east: {
+      right: width * 0.04,
+      top: "50%",
+      marginTop: -width * 0.025,
+    },
+    west: {
+      left: width * 0.04,
+      top: "50%",
+      marginTop: -width * 0.025,
+    },
+    directionText: {
+      marginTop: width * 0.04,
+      fontSize: width * 0.045,
+      color: theme.text,
+      textAlign: "center",
+      lineHeight: width * 0.06,
+    },
+    foundText: {
+      marginTop: width * 0.04,
+      fontSize: width * 0.055,
+      color: "#4CAF50",
+      fontWeight: "bold",
+    },
+    error: {
+      color: "#FF5252",
+      fontSize: width * 0.045,
+    },
+    loadingText: {
+      fontSize: width * 0.05,
+      color: theme.text,
+    },
+  }), [theme]);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Qibla Direction</Text>
+    <View style={dynamicStyles.container}>
+      <Text style={dynamicStyles.heading}>Qibla Direction</Text>
       {error ? (
-        <Text style={styles.error}>Error: {error}</Text>
+        <Text style={dynamicStyles.error}>Error: {error}</Text>
       ) : qiblaDirection !== null ? (
-        <View style={styles.contentContainer}>
-          <View style={[styles.compassContainer, isQiblaFound && { borderColor: '#4CAF50' }]}>
-            <View style={[styles.dial, { transform: [{ rotate: `-${deviceHeading}deg` }] }]}>
-              <Text style={[styles.cardinal, styles.north]}>N</Text>
-              <Text style={[styles.cardinal, styles.east]}>E</Text>
-              <Text style={[styles.cardinal, styles.south]}>S</Text>
-              <Text style={[styles.cardinal, styles.west]}>W</Text>
+        <View style={dynamicStyles.contentContainer}>
+          <View style={[dynamicStyles.compassContainer, isQiblaFound && { borderColor: '#4CAF50' }]}>
+            <View style={[dynamicStyles.dial, { transform: [{ rotate: `-${deviceHeading}deg` }] }]}>
+              <Text style={[dynamicStyles.cardinal, dynamicStyles.north]}>N</Text>
+              <Text style={[dynamicStyles.cardinal, dynamicStyles.east]}>E</Text>
+              <Text style={[dynamicStyles.cardinal, dynamicStyles.south]}>S</Text>
+              <Text style={[dynamicStyles.cardinal, dynamicStyles.west]}>W</Text>
             </View>
             <Animated.View style={{ transform: [{ rotate: interpolatedRotation }] }}>
               <Ionicons
                 name="arrow-up"
                 size={80}
-                color="#333"
+                color={theme.text}
                 accessibilityLabel="Qibla direction arrow"
               />
             </Animated.View>
           </View>
 
-          <Text style={styles.directionText}>
+          <Text style={dynamicStyles.directionText}>
             Arrow Rotation: {arrowRotation.toFixed(2)}°{"\n"}
             Device Heading: {deviceHeading.toFixed(2)}°{"\n"}
             Qibla: {qiblaDirection.toFixed(2)}°
           </Text>
-          {isQiblaFound && <Text style={styles.foundText}>Qibla Found!</Text>}
-
-          {/* <View style={styles.photoContainer}>
-            <Text style={styles.photoTitle}>Qibla Image</Text>
-            <Image
-              source={{ uri: '../../assets/transparent-icon-qibla-compass-icon-kaaba-icon-6066de725800d0.4997917216173543543605.png' }}
-              style={styles.photo}
-              resizeMode="contain"
-            />
-          </View> */}
+          {isQiblaFound && <Text style={dynamicStyles.foundText}>Qibla Found!</Text>}
         </View>
       ) : (
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={dynamicStyles.loadingText}>Loading...</Text>
       )}
     </View>
   );
 };
 
 export default QiblaPage;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  heading: {
-    fontSize: 30,
-    fontWeight: "800",
-    color: "#333", 
-    marginBottom: 25,
-    textShadowColor: '#ccc',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  contentContainer: {
-    alignItems: "center",
-  },
-  compassContainer: {
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    borderWidth: 3,
-    borderColor: "#333",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-    backgroundColor: "rgba(0,0,0,0.05)", 
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  dial: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  cardinal: {
-    position: "absolute",
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  north: {
-    top: 10,
-    alignSelf: "center",
-  },
-  south: {
-    bottom: 10,
-    alignSelf: "center",
-  },
-  east: {
-    right: 10,
-    top: "50%",
-    marginTop: -10,
-  },
-  west: {
-    left: 10,
-    top: "50%",
-    marginTop: -10,
-  },
-  directionText: {
-    marginTop: 15,
-    fontSize: 16,
-    color: "#333",
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  foundText: {
-    marginTop: 15,
-    fontSize: 20,
-    color: "#4CAF50",
-    fontWeight: "bold",
-  },
-  error: {
-    color: "#FF5252",
-    fontSize: 16,
-  },
-  loadingText: {
-    fontSize: 18,
-    color: "#333",
-  },
-  photoContainer: {
-    marginTop: 25,
-    alignItems: "center",
-  },
-  photoTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 10,
-  },
-  photo: {
-    width: 150,
-    height: 150,
-    borderRadius: 10,
-  },
-});

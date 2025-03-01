@@ -1,8 +1,11 @@
-import { StyleSheet, Text, View, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, ActivityIndicator, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { useRoute } from '@react-navigation/native';
 import { fontStyles } from '../../src/styles/fonts';
+import { useTheme } from "@/src/context/ThemeContext";
+
+const { width } = Dimensions.get("window");
 
 interface Surah {
   _id: string;
@@ -27,6 +30,8 @@ const SurahDetails: React.FC = () => {
   const [language, setLanguage] = useState<'ar' | 'en' | 'ur'>('ar');
   const route = useRoute();
   const { id } = route.params as { id: string };
+
+  const { theme, isDarkMode } = useTheme();
 
   // Helper function to choose the correct font for each language
   const getFontFamilyForLanguage = (lang: 'ar' | 'en' | 'ur') => {
@@ -54,56 +59,184 @@ const SurahDetails: React.FC = () => {
     fetchSurah();
   }, [id]);
 
-  if (loading) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#007aff" />
-        <Text style={styles.loaderText}>Loading Surah...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.loaderContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
-  }
-
-  if (!surah) {
-    return (
-      <View style={styles.loaderContainer}>
-        <Text style={styles.errorText}>Surah not found</Text>
-      </View>
-    );
-  }
-
-  // Get header title based on selected language
   const getTitle = () => {
-    if (language === 'ar') return surah.nameArabic;
-    if (language === 'en') return surah.nameEnglish;
-    return surah.nameUrdu;
+    if (language === 'ar') return surah?.nameArabic;
+    if (language === 'en') return surah?.nameEnglish;
+    return surah?.nameUrdu;
   };
 
   // Insert newline before each verse marker (e.g., "1:2")
   const getFormattedDetails = () => {
     const detailsText =
       language === 'ar'
-        ? surah.detailsArabi
+        ? surah?.detailsArabi || ""
         : language === 'en'
-        ? surah.detailsEnglish
-        : surah.detailsUrdu;
+        ? surah?.detailsEnglish || ""
+        : surah?.detailsUrdu || "";
     return detailsText.replace(/(\d+:\d+)/g, '\n$1');
   };
 
+  const dynamicStyles = useMemo(() => StyleSheet.create({
+    container: {
+      flexGrow: 1,
+      backgroundColor: theme.background,
+      padding: width * 0.04,
+    },
+    loaderContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: theme.background,
+    },
+    loaderText: {
+      marginTop: width * 0.025,
+      fontSize: width * 0.045,
+      color: theme.text,
+    },
+    errorText: {
+      fontSize: width * 0.045,
+      color: '#ff3b30',
+    },
+    headerContainer: {
+      marginBottom: width * 0.08,
+      alignItems: 'center',
+    },
+    arabicContent: {
+      ...fontStyles.arabicText,
+      marginBottom: width * 0.05,
+      color: theme.text,
+    },
+    urduContent: {
+      ...fontStyles.urduText,
+      marginBottom: width * 0.05,
+      color: theme.text,
+    },
+    englishContent: {
+      ...fontStyles.englishText,
+      marginBottom: width * 0.05,
+      color: theme.text,
+    },
+    nameArabic: {
+      ...fontStyles.arabicText,
+      fontSize: width * 0.07,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginBottom: width * 0.03,
+      color: theme.text,
+    },
+    nameUrdu: {
+      ...fontStyles.urduText,
+      fontSize: width * 0.06,
+      textAlign: 'center',
+      marginBottom: width * 0.03,
+      color: theme.text,
+    },
+    nameEnglish: {
+      ...fontStyles.englishText,
+      fontSize: width * 0.055,
+      fontWeight: '500',
+      textAlign: 'center',
+      marginBottom: width * 0.04,
+      color: theme.text,
+    },
+    card: {
+      width: '100%',
+      backgroundColor: theme.card,
+      padding: width * 0.05,
+      borderRadius: width * 0.04,
+      shadowColor: theme.text,
+      shadowOffset: { width: 0, height: width * 0.02 },
+      shadowOpacity: 0.1,
+      shadowRadius: width * 0.02,
+      elevation: 5,
+      marginBottom: width * 0.05,
+    },
+    cardText: {
+      fontSize: width * 0.045,
+      color: theme.text,
+      marginBottom: width * 0.02,
+    },
+    languageContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      width: '100%',
+      marginBottom: width * 0.05,
+    },
+    languageButton: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: width * 0.03,
+      marginHorizontal: width * 0.015,
+      backgroundColor: isDarkMode ? theme.card : '#eee',
+      borderRadius: width * 0.06,
+    },
+    activeButton: {
+      backgroundColor: '#007aff',
+    },
+    languageText: {
+      fontSize: width * 0.045,
+      color: isDarkMode ? theme.text : '#555',
+    },
+    activeText: {
+      color: '#fff',
+      fontWeight: '600',
+    },
+    textCard: {
+      width: '100%',
+      backgroundColor: theme.card,
+      padding: width * 0.05,
+      borderRadius: width * 0.04,
+      shadowColor: theme.text,
+      shadowOffset: { width: 0, height: width * 0.02 },
+      shadowOpacity: 0.1,
+      shadowRadius: width * 0.02,
+      elevation: 5,
+      marginBottom: width * 0.05,
+    },
+    sectionTitle: {
+      fontSize: width * 0.06,
+      fontWeight: '600',
+      color: isDarkMode ? "#80BFFF" : "#007aff",
+      marginBottom: width * 0.03,
+    },
+  }), [theme, isDarkMode, width]);
+
+  if (loading) {
+    return (
+      <View style={dynamicStyles.loaderContainer}>
+        <ActivityIndicator size="large" color="#007aff" />
+        <Text style={dynamicStyles.loaderText}>Loading Surah...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={dynamicStyles.loaderContainer}>
+        <Text style={dynamicStyles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
+  if (!surah) {
+    return (
+      <View style={dynamicStyles.loaderContainer}>
+        <Text style={dynamicStyles.errorText}>Surah not found</Text>
+      </View>
+    );
+  }
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={dynamicStyles.container}>
       {/* Header Section */}
-      <View style={styles.headerContainer}>
+      <View style={dynamicStyles.headerContainer}>
         <Text
           style={[
-            language === 'ar' ? styles.nameArabic : language === 'ur' ? styles.nameUrdu : styles.nameEnglish,
+            language === 'ar'
+              ? dynamicStyles.nameArabic
+              : language === 'ur'
+              ? dynamicStyles.nameUrdu
+              : dynamicStyles.nameEnglish,
           ]}
         >
           {getTitle()}
@@ -111,46 +244,50 @@ const SurahDetails: React.FC = () => {
       </View>
 
       {/* Info Card */}
-      <View style={styles.card}>
-        <Text style={styles.cardText}>Chapter: {surah.chapterNumber}</Text>
-        <Text style={styles.cardText}>Revelation: {surah.revelationType}</Text>
-        <Text style={styles.cardText}>Place: {surah.place}</Text>
-        <Text style={styles.cardText}>Verses: {surah.totalVerses}</Text>
+      <View style={dynamicStyles.card}>
+        <Text style={dynamicStyles.cardText}>Chapter: {surah.chapterNumber}</Text>
+        <Text style={dynamicStyles.cardText}>Revelation: {surah.revelationType}</Text>
+        <Text style={dynamicStyles.cardText}>Place: {surah.place}</Text>
+        <Text style={dynamicStyles.cardText}>Verses: {surah.totalVerses}</Text>
       </View>
 
       {/* Language Switcher */}
-      <View style={styles.languageContainer}>
+      <View style={dynamicStyles.languageContainer}>
         <TouchableOpacity
           onPress={() => setLanguage('ar')}
-          style={[styles.languageButton, language === 'ar' && styles.activeButton]}
+          style={[dynamicStyles.languageButton, language === 'ar' && dynamicStyles.activeButton]}
         >
-          <Text style={[styles.languageText, language === 'ar' && styles.activeText]}>
+          <Text style={[dynamicStyles.languageText, language === 'ar' && dynamicStyles.activeText]}>
             عربی
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setLanguage('en')}
-          style={[styles.languageButton, language === 'en' && styles.activeButton]}
+          style={[dynamicStyles.languageButton, language === 'en' && dynamicStyles.activeButton]}
         >
-          <Text style={[styles.languageText, language === 'en' && styles.activeText]}>
+          <Text style={[dynamicStyles.languageText, language === 'en' && dynamicStyles.activeText]}>
             English
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setLanguage('ur')}
-          style={[styles.languageButton, language === 'ur' && styles.activeButton]}
+          style={[dynamicStyles.languageButton, language === 'ur' && dynamicStyles.activeButton]}
         >
-          <Text style={[styles.languageText, language === 'ur' && styles.activeText]}>
+          <Text style={[dynamicStyles.languageText, language === 'ur' && dynamicStyles.activeText]}>
             اردو
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Details Card */}
-      <View style={styles.textCard}>
+      <View style={dynamicStyles.textCard}>
         <Text
           style={[
-            language === 'ar' ? styles.arabicContent : language === 'ur' ? styles.urduContent : styles.englishContent,
+            language === 'ar'
+              ? dynamicStyles.arabicContent
+              : language === 'ur'
+              ? dynamicStyles.urduContent
+              : dynamicStyles.englishContent,
           ]}
         >
           {getFormattedDetails()}
@@ -158,11 +295,15 @@ const SurahDetails: React.FC = () => {
       </View>
 
       {/* Tafseer Section */}
-      <View style={styles.textCard}>
-        <Text style={styles.sectionTitle}>Explanation</Text>
+      <View style={dynamicStyles.textCard}>
+        <Text style={dynamicStyles.sectionTitle}>Explanation</Text>
         <Text
           style={[
-            language === 'ar' ? styles.arabicContent : language === 'ur' ? styles.urduContent : styles.englishContent,
+            language === 'ar'
+              ? dynamicStyles.arabicContent
+              : language === 'ur'
+              ? dynamicStyles.urduContent
+              : dynamicStyles.englishContent,
           ]}
         >
           {surah.tafseer}
@@ -173,122 +314,3 @@ const SurahDetails: React.FC = () => {
 };
 
 export default SurahDetails;
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 15,
-  },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  loaderText: {
-    marginTop: 10,
-    fontSize: 18,
-    color: '#333',
-  },
-  errorText: {
-    fontSize: 18,
-    color: '#ff3b30',
-  },
-  headerContainer: {
-    marginBottom: 30,
-    alignItems: 'center',
-  },
-  arabicContent: {
-    ...fontStyles.arabicText,
-    marginBottom: 20,
-  },
-  urduContent: {
-    ...fontStyles.urduText,
-    marginBottom: 20,
-  },
-  englishContent: {
-    ...fontStyles.englishText,
-    marginBottom: 20,
-  },
-  nameArabic: {
-    ...fontStyles.arabicText,
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  nameUrdu: {
-    ...fontStyles.urduText,
-    fontSize: 24,
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  nameEnglish: {
-    ...fontStyles.englishText,
-    fontSize: 20,
-    fontWeight: '500',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  card: {
-    width: '100%',
-    backgroundColor: '#ffffff',
-    padding: 20,
-    borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
-    marginBottom: 20,
-  },
-  cardText: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 5,
-  },
-  languageContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 20,
-  },
-  languageButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    marginHorizontal: 5,
-    backgroundColor: '#eee',
-    borderRadius: 25,
-  },
-  activeButton: {
-    backgroundColor: '#007aff',
-  },
-  languageText: {
-    fontSize: 16,
-    color: '#555',
-  },
-  activeText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  textCard: {
-    width: '100%',
-    backgroundColor: '#ffffff',
-    padding: 20,
-    borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#007aff',
-    marginBottom: 10,
-  },
-});

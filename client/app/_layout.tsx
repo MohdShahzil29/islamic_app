@@ -1,7 +1,9 @@
 import { Stack } from "expo-router";
+import { ThemeProvider } from "@/src/context/ThemeContext";
 
 export default function RootLayout() {
   return (
+    <ThemeProvider>
     <Stack>
       <Stack.Screen name="(tab)/HomePage" options={{ headerShown: false}}/>
       <Stack.Screen name="(tab)/Fatwa" options={{headerTransparent: true, headerTitle: "",}}/>
@@ -10,5 +12,6 @@ export default function RootLayout() {
       <Stack.Screen name="(hadith)/Hadith" options={{headerTransparent: true, headerTitle: "",}}/>
       <Stack.Screen name="(time)/Time" options={{headerTransparent: true, headerTitle: "",}}/>
     </Stack>
+    </ThemeProvider>
   );
 }

@@ -1,12 +1,14 @@
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import React, { useState, useRef } from 'react';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '@/src/context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
 export default function Header() {
   const [menuVisible, setMenuVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-width)).current;
+  const { isDarkMode, toggleTheme, theme } = useTheme();
 
   const openMenu = () => {
     setMenuVisible(true);
@@ -26,16 +28,22 @@ export default function Header() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header Bar */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.card }]}>
         <TouchableOpacity onPress={openMenu}>
-          <Feather name="menu" size={24} color="#4CAF50" />
+          <Feather name="menu" size={24} color={theme.text} />
         </TouchableOpacity>
 
-        <Text style={styles.headerText}>Quran App</Text>
+        <Text style={[styles.headerText, { color: theme.text }]}>Quran App</Text>
 
-        <Feather name="search" size={24} color="#4CAF50" />
+        <TouchableOpacity onPress={toggleTheme}>
+          <MaterialCommunityIcons 
+            name={isDarkMode ? "weather-sunny" : "weather-night"} 
+            size={30} 
+            color={theme.text} 
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Overlay (closes menu when clicked) */}
@@ -44,68 +52,60 @@ export default function Header() {
       )}
 
       {/* Side Menu */}
-      <Animated.View style={[styles.menu, { transform: [{ translateX: slideAnim }] }]}>
+      <Animated.View style={[styles.menu, { transform: [{ translateX: slideAnim }], backgroundColor: theme.card }]}>
         <TouchableOpacity onPress={closeMenu} style={styles.closeButton}>
-          <Feather name="x" size={24} color="white" />
+          <Feather name="x" size={24} color={theme.text} />
         </TouchableOpacity>
 
-        <Text style={styles.menuItem}>Home</Text>
-        <Text style={styles.menuItem}>Bookmarks</Text>
-        <Text style={styles.menuItem}>Settings</Text>
-        <Text style={styles.menuItem}>About</Text>
+        <Text style={[styles.menuItem, { color: theme.text }]}>Home</Text>
+        <Text style={[styles.menuItem, { color: theme.text }]}>Bookmarks</Text>
+        <Text style={[styles.menuItem, { color: theme.text }]}>Settings</Text>
+        <Text style={[styles.menuItem, { color: theme.text }]}>About</Text>
       </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-    container: {
-    //   flex: 1,
-    },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: 15,
-      backgroundColor: '#F9F6EE',
-      borderBottomWidth: 1,
-      borderBottomColor: '#DDD',
-    },
-    headerText: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: '#4CAF50',
-      fontFamily: 'Georgia',
-    },
-    menu: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: width * 0.75,
-      height: Dimensions.get('window').height,
-      backgroundColor: '#4CAF50',
-      padding: 15,
-      zIndex: 10,
-    },
-    closeButton: {
-      alignSelf: 'flex-end',
-      marginBottom: 20,
-    },
-    menuItem: {
-      fontSize: 18,
-      color: 'white',
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: 'white',
-    },
-    overlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: Dimensions.get('window').height,
-      backgroundColor: 'rgba(0,0,0,0.5)', 
-    },
-  });
-  
+  container: {},
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#DDD',
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    fontFamily: 'Georgia',
+  },
+  menu: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: width * 0.75,
+    height: Dimensions.get('window').height,
+    padding: 15,
+    zIndex: 10,
+  },
+  closeButton: {
+    alignSelf: 'flex-end',
+    marginBottom: 20,
+  },
+  menuItem: {
+    fontSize: 18,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: Dimensions.get('window').height,
+  },
+});
+
 
