@@ -67,7 +67,9 @@ export default function Header() {
         <Text style={[styles.menuItem, { color: theme.text }]}>Mosque</Text>
       </TouchableOpacity>
 
-      <Text style={[styles.menuItem, { color: theme.text }]}>Settings</Text>
+      <TouchableOpacity onPress={() => router.push("/(quran)/Quran")}>
+        <Text style={[styles.menuItem, { color: theme.text }]}>Quran</Text>
+      </TouchableOpacity>
       <Text style={[styles.menuItem, { color: theme.text }]}>About</Text>
     </Animated.View>
     </View>
