@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
-import { Feather } from "@expo/vector-icons";
-import QuranImage from "@/assets/Quran2.png";
+import QuranImage from "../../assets/Quran2.png";
 import axios from 'axios';
 import { router } from "expo-router";
 
@@ -25,7 +24,7 @@ export default function Home() {
     try {
       setLoading(true);
       setError(null);
-      const res = await axios.get(`http://192.168.37.77:5000/api/surahs/get-all`);
+      const res = await axios.get(`http://192.168.189.77:5000/api/surahs/get-all`);
       if (res.data.success && Array.isArray(res.data.data)) {
         setSurah(res.data.data);
       } else {

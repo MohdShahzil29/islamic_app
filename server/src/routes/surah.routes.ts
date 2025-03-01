@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import express from 'express';
+import path from 'path';
 import {
   createSurah,
   getAllSurahs,
@@ -8,7 +10,7 @@ import {
   getSurahByNumber
 } from '../controllers/surah.controller';
 
-const router = Router();
+const router = express.Router();
 
 // Create a new Surah
 router.post('/create', createSurah);
@@ -27,5 +29,7 @@ router.put('/:id', updateSurah);
 
 // Delete a Surah
 router.delete('/:id', deleteSurah);
+
+
 
 export default router;

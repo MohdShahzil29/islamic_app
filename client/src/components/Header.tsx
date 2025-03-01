@@ -2,16 +2,16 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from '
 import React, { useState, useRef } from 'react';
 import { Feather } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window'); // Get screen width
+const { width } = Dimensions.get('window');
 
 export default function Header() {
   const [menuVisible, setMenuVisible] = useState(false);
-  const slideAnim = useRef(new Animated.Value(-width)).current; // Start off-screen
+  const slideAnim = useRef(new Animated.Value(-width)).current;
 
   const openMenu = () => {
     setMenuVisible(true);
     Animated.timing(slideAnim, {
-      toValue: 0, // Slide to screen
+      toValue: 0, 
       duration: 300,
       useNativeDriver: true,
     }).start();
@@ -19,7 +19,7 @@ export default function Header() {
 
   const closeMenu = () => {
     Animated.timing(slideAnim, {
-      toValue: -width, // Slide off-screen
+      toValue: -width,
       duration: 300,
       useNativeDriver: true,
     }).start(() => setMenuVisible(false));

@@ -46,8 +46,8 @@ const LoadScreen = () => {
           style={[styles.image, { opacity: fadeAnim }]}
         />
       </View>
-      <TouchableOpacity style={styles.button} onPress={() => {}}>
-        <Text style={styles.buttonText} onPress={() => router.push("/(tab)/HomePage")}>Get Started</Text>
+      <TouchableOpacity style={styles.button} onPress={() => router.push("/(tab)/HomePage")}>
+        <Text style={styles.buttonText}>Get Started</Text>
       </TouchableOpacity>
     </LinearGradient>
   );

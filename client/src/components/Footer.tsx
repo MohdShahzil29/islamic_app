@@ -11,13 +11,14 @@ export default function Footer() {
     <View style={styles.footer}>
       <FontAwesome name="book" size={width * 0.07} style={styles.icon} color="#4CAF50" />
       <MaterialCommunityIcons name="book" size={width * 0.07} style={styles.icon} color="#8BC34A" 
-      onPress={() => router.push("/(tab)/Fatwa")}
+      onPress={() => router.push("/(hadith)/Hadith")}
       />
       <Entypo name="man" size={width * 0.07} style={styles.icon} color="#4CAF50" 
       onPress={() => router.push("/(qibla)/Qibla")}
       />
-      <Feather name="bookmark" size={width * 0.07} style={styles.icon} color="#8BC34A" />
-      <FontAwesome name="hands-helping" size={width * 0.07} style={styles.icon} color="#4CAF50" />
+      <FontAwesome name="clock-o" size={width * 0.07} style={styles.icon} color="#4CAF50" 
+      onPress={() => router.push("/(time)/Time")}
+      />
     </View>
   );
 }
@@ -31,12 +32,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: "#DDD",
-    // Ensure footer takes full width
     width: "100%",
   },
   icon: {
     textAlign: "center",
-    // Adjust icon size based on screen width
     fontSize: width * 0.07,
   },
 });

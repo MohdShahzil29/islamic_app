@@ -43,7 +43,7 @@ const SurahDetails: React.FC = () => {
           setLoading(false);
           return;
         }
-        const response = await axios.get(`http://192.168.37.77:5000/api/surahs/getbyId/${id}`);
+        const response = await axios.get(`http://192.168.189.77:5000/api/surahs/getbyId/${id}`);
         setSurah(response.data.data);
         setLoading(false);
       } catch (err) {
@@ -159,7 +159,7 @@ const SurahDetails: React.FC = () => {
 
       {/* Tafseer Section */}
       <View style={styles.textCard}>
-        <Text style={styles.sectionTitle}>Tafseer</Text>
+        <Text style={styles.sectionTitle}>Explanation</Text>
         <Text
           style={[
             language === 'ar' ? styles.arabicContent : language === 'ur' ? styles.urduContent : styles.englishContent,
