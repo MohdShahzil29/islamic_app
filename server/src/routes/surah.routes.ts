@@ -7,7 +7,8 @@ import {
   getSurahById,
   updateSurah,
   deleteSurah,
-  getSurahByNumber
+  getSurahByNumber,
+  searchSurahs
 } from '../controllers/surah.controller';
 
 const router = express.Router();
@@ -24,12 +25,13 @@ router.get('/getbyId/:id', getSurahById);
 // Get Surah by number
 router.get('/number/:number', getSurahByNumber);
 
+// Search Surahs
+router.get('/search', searchSurahs);
+
 // Update a Surah
 router.put('/:id', updateSurah);
 
 // Delete a Surah
 router.delete('/:id', deleteSurah);
-
-
 
 export default router;

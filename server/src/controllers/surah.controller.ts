@@ -165,3 +165,43 @@ export const getSurahByNumber = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Search Surahs
+export const searchSurahs = async (req: Request, res: Response) => {
+  try {
+    const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({ success: false, message: "Search query is required" });
+    }
+
+    // Redis cache key
+    const cacheKey = `search:${query}`;
+
+    // Check cache
+    const cachedData = await redisClient.get(cacheKey);
+    if (cachedData) {
+      console.log("Cache hit for query:", query);
+      return res.json({ success: true, surahs: JSON.parse(cachedData) });
+    }
+
+    // Search in multiple name fields
+    const surahs = await Surah.find({
+      $or: [
+        { nameArabic: new RegExp(query.toString(), "i") },
+        { nameUrdu: new RegExp(query.toString(), "i") },
+        { nameEnglish: new RegExp(query.toString(), "i") }
+      ]
+    });
+
+    console.log("Surah", surahs)
+
+    // Cache the result
+    await redisClient.setEx(cacheKey, 60, JSON.stringify(surahs));
+    // console.log("Cache miss for query:", query, "- caching result");
+
+    return res.json({ success: true, surahs });
+  } catch (error) {
+    console.error("Error searching surahs:", error);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+};

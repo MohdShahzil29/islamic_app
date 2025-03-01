@@ -8,12 +8,14 @@ import {
   Modal, 
   ScrollView, 
   ActivityIndicator, 
-  Dimensions 
+  Dimensions, 
+  TextInput
 } from 'react-native';
 import axios from 'axios';
 import { useLocalSearchParams } from 'expo-router';
 import { fontStyles } from '../../src/styles/fonts';
 import { useTheme } from '@/src/context/ThemeContext';
+import { Ionicons } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get('window');
 
@@ -63,6 +65,7 @@ const HadithBook: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedHadith, setSelectedHadith] = useState<Hadith | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState(""); 
   // Only English, Urdu, and Arabic are supported.
   const [selectedLanguage, setSelectedLanguage] = useState<'urdu' | 'english' | 'arabic'>('english');
   const [pagination, setPagination] = useState<Pagination>({
@@ -72,7 +75,6 @@ const HadithBook: React.FC = () => {
     prev_page_url: null,
   });
 
-  // Destructure isDarkMode along with theme from your context.
   const { theme, isDarkMode } = useTheme();
 
   useEffect(() => {
@@ -110,12 +112,10 @@ const HadithBook: React.FC = () => {
     setModalVisible(false);
   };
 
-  // Updated to use the selected language for the title.
   const getHadithTitle = (hadith: Hadith) => {
     if (selectedLanguage === 'english' && hadith.headingEnglish) return hadith.headingEnglish;
     if (selectedLanguage === 'urdu' && hadith.headingUrdu) return hadith.headingUrdu;
     if (selectedLanguage === 'arabic' && hadith.headingArabic) return hadith.headingArabic;
-    // Fallback: if all title fields are null, return the first three words of the hadith description.
     return hadith.hadithEnglish.split(' ').slice(0, 3).join(' ');
   };
 
@@ -138,7 +138,6 @@ const HadithBook: React.FC = () => {
     }
   };
 
-  // Helper function to return the appropriate text style based on language.
   const getTextStyle = () => {
     switch (selectedLanguage) {
       case 'urdu':
@@ -199,7 +198,6 @@ const HadithBook: React.FC = () => {
       borderRadius: 8,
     },
     pageButtonText: {
-      // In dark mode, force text color to white.
       color: isDarkMode ? '#FFFFFF' : theme.buttonText,
       fontWeight: 'bold',
     },
@@ -264,7 +262,47 @@ const HadithBook: React.FC = () => {
       fontWeight: 'bold',
       color: theme.text,
     },
+    searchContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#fff",
+      borderRadius: 25,
+      paddingHorizontal: 15,
+      paddingVertical: 8,
+      marginHorizontal: 15,
+      marginVertical: 10,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 5,
+      elevation: 3,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      color: "#5CE65C",
+      fontFamily: "Georgia",
+      marginLeft: 10,
+    },
   }), [theme, isDarkMode]);
+
+  // Compute the filtered hadiths based on the search query.
+  const filteredHadiths = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return hadiths;
+    }
+    const query = searchQuery.toLowerCase();
+    return hadiths.filter((hadith) => {
+      const hadithNumber = hadith.hadithNumber.toLowerCase();
+      const headingEnglish = hadith.headingEnglish?.toLowerCase() || '';
+      const bookName = hadith.book.bookName?.toLowerCase() || '';
+      return (
+        hadithNumber.includes(query) ||
+        headingEnglish.includes(query) ||
+        bookName.includes(query)
+      );
+    });
+  }, [searchQuery, hadiths]);
 
   if (loading) {
     return (
@@ -277,13 +315,24 @@ const HadithBook: React.FC = () => {
   return (
     <View style={dynamicStyles.container}>
       <Text style={[dynamicStyles.heading, fontStyles.englishText]}>📖 Hadiths</Text>
-
+      <View style={dynamicStyles.searchContainer}>
+        <Ionicons name="search" size={20} color="#5CE65C" />
+        <TextInput
+          style={dynamicStyles.searchInput}
+          placeholder="Search Hadith"
+          placeholderTextColor="#999"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
       <FlatList
-        data={hadiths}
+        data={filteredHadiths}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <TouchableOpacity style={dynamicStyles.card} onPress={() => openModal(item)}>
-            <Text style={[dynamicStyles.title, fontStyles.englishText]}>{getHadithTitle(item)}</Text>
+            <Text style={[dynamicStyles.title, fontStyles.englishText]}>
+              {getHadithTitle(item)}
+            </Text>
           </TouchableOpacity>
         )}
         contentContainerStyle={{ paddingBottom: 20 }}

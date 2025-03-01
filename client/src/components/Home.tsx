@@ -11,7 +11,6 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import QuranImage from "../../assets/Quran2.png";
 import axios from "axios";
 import { router } from "expo-router";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -33,14 +32,14 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(""); // State for search input
   const { isDarkMode, toggleTheme, theme } = useTheme();
+  // console.log("Get serach data", searchQuery)
 
+  // Get all surahs when no search query is provided
   const getAllSurah = async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await axios.get(
-        `http://192.168.189.77:5000/api/surahs/get-all`
-      );
+      const res = await axios.get(`http://192.168.189.77:5000/api/surahs/get-all`);
       if (res.data.success && Array.isArray(res.data.data)) {
         setSurah(res.data.data);
       } else {
@@ -54,16 +53,50 @@ export default function Home() {
     }
   };
 
+  // Call search API endpoint
+  const searchSurahAPI = async (query: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await axios.get(`http://192.168.189.77:5000/api/surahs/search`, {
+        params: { query },
+        headers: { "Cache-Control": "no-cache" },
+      });
+      if (res.data.success && Array.isArray(res.data.surahs)) {
+        setSurah(res.data.surahs);
+      } else {
+        setError("Invalid data format received from server");
+      }
+    } catch (error) {
+      console.error(error);
+      setError("Failed to search surahs");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
+  // On mount, get the full list
   useEffect(() => {
     getAllSurah();
   }, []);
 
-  // Filter surahs based on the search query
-  const filteredSurah = surah.filter((s) =>
-    s.nameEnglish.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // useEffect to handle dynamic search
+  useEffect(() => {
+    // If searchQuery is empty, fetch all surahs
+    if (searchQuery.trim() === "") {
+      getAllSurah();
+    } else {
+      // Debounce API call to reduce the number of requests
+      const delayDebounceFn = setTimeout(() => {
+        searchSurahAPI(searchQuery);
+      }, 300); // 300ms delay
 
-  // Dynamic styles based on the active theme (light/dark)
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [searchQuery]);
+
+  // Dynamic styles based on active theme (light/dark)
   const dynamicStyles = useMemo(
     () =>
       StyleSheet.create({
@@ -114,7 +147,7 @@ export default function Home() {
         searchInput: {
           flex: 1,
           fontSize: 16,
-          color: theme.text,
+          color: "#5CE65C",
           fontFamily: "Georgia",
           marginLeft: 10,
         },
@@ -198,7 +231,7 @@ export default function Home() {
 
       {/* Fancy Search Bar Section */}
       <View style={dynamicStyles.searchContainer}>
-        <Ionicons name="search" size={20} color="#8BC34A" />
+        <Ionicons name="search" size={20} color="#5CE65C" />
         <TextInput
           style={dynamicStyles.searchInput}
           placeholder="Search Surahs"
@@ -214,10 +247,10 @@ export default function Home() {
           <Text style={dynamicStyles.messageText}>Fetching Data...</Text>
         ) : error ? (
           <Text style={dynamicStyles.messageText}>{error}</Text>
-        ) : filteredSurah.length === 0 ? (
+        ) : surah.length === 0 ? (
           <Text style={dynamicStyles.messageText}>No surahs found</Text>
         ) : (
-          filteredSurah.map((surahItem: Surah) => (
+          surah.map((surahItem: Surah) => (
             <TouchableOpacity
               key={surahItem._id}
               style={dynamicStyles.surahContainer}
@@ -235,10 +268,7 @@ export default function Home() {
                   </Text>
                 </View>
                 <View style={dynamicStyles.surahTextContainer}>
-                  <Text
-                    style={dynamicStyles.listSurahName}
-                    numberOfLines={1}
-                  >
+                  <Text style={dynamicStyles.listSurahName} numberOfLines={1}>
                     {surahItem.nameEnglish}
                   </Text>
                   <Text style={dynamicStyles.surahDetails}>

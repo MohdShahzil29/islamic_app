@@ -37,7 +37,7 @@ export default function Header() {
           <Feather name="menu" size={24} color={theme.text} />
         </TouchableOpacity>
 
-        <Text style={[styles.headerText, { color: theme.text }]}>Quran App</Text>
+        <Text style={[styles.headerText, { color: theme.text }]}>Hikam</Text>
 
         <TouchableOpacity onPress={toggleTheme}>
           <MaterialCommunityIcons 
