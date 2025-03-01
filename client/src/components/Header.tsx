@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from '
 import React, { useState, useRef } from 'react';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/src/context/ThemeContext';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -9,6 +10,7 @@ export default function Header() {
   const [menuVisible, setMenuVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-width)).current;
   const { isDarkMode, toggleTheme, theme } = useTheme();
+  const router = useRouter()
 
   const openMenu = () => {
     setMenuVisible(true);
@@ -53,15 +55,21 @@ export default function Header() {
 
       {/* Side Menu */}
       <Animated.View style={[styles.menu, { transform: [{ translateX: slideAnim }], backgroundColor: theme.card }]}>
-        <TouchableOpacity onPress={closeMenu} style={styles.closeButton}>
-          <Feather name="x" size={24} color={theme.text} />
-        </TouchableOpacity>
+      <TouchableOpacity onPress={closeMenu} style={styles.closeButton}>
+        <Feather name="x" size={24} color={theme.text} />
+      </TouchableOpacity>
 
+      <TouchableOpacity onPress={() => router.push("/(tab)/HomePage")}>
         <Text style={[styles.menuItem, { color: theme.text }]}>Home</Text>
-        <Text style={[styles.menuItem, { color: theme.text }]}>Bookmarks</Text>
-        <Text style={[styles.menuItem, { color: theme.text }]}>Settings</Text>
-        <Text style={[styles.menuItem, { color: theme.text }]}>About</Text>
-      </Animated.View>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => router.push("/(mosque)/Mosque")}>
+        <Text style={[styles.menuItem, { color: theme.text }]}>Mosque</Text>
+      </TouchableOpacity>
+
+      <Text style={[styles.menuItem, { color: theme.text }]}>Settings</Text>
+      <Text style={[styles.menuItem, { color: theme.text }]}>About</Text>
+    </Animated.View>
     </View>
   );
 }

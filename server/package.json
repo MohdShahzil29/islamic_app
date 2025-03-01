@@ -15,7 +15,8 @@
     "express": "^4.18.2",
     "mongoose": "^8.10.2",
     "morgan": "^1.10.0",
-    "pdf2image": "latest"
+    "pdf2image": "latest",
+    "redis": "^4.7.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

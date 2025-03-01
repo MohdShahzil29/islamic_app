@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/db';
 import surahRoutes from './routes/surah.routes';
 import morgan from 'morgan'
+import redisClient from './config/redis';
 
 dotenv.config();
 
@@ -12,6 +13,10 @@ const port = process.env.PORT || 5000;
 
 // Connect to MongoDB
 connectDB();
+
+redisClient.on("connect", () => {
+  console.log("Redis client connected");
+});
 
 // Middleware
 app.use(cors());
