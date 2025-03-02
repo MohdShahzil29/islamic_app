@@ -13,9 +13,10 @@ import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import { PrayerTimes, CalculationMethod, Coordinates } from 'adhan';
 import { useTheme } from '@/src/context/ThemeContext';
+import { Audio } from 'expo-av'; 
+import azanAudio from '../../assets/azan2.mp3';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-// Base scale using an iPhone 6/7/8 width of 375
 const scale = SCREEN_WIDTH / 375;
 
 interface CoordinatesType {
@@ -23,37 +24,14 @@ interface CoordinatesType {
   longitude: number;
 }
 
-// Redesigned Digital Clock Component (Modern Banner Style)
-const DigitalClock: React.FC = () => {
-  const [currentTime, setCurrentTime] = useState<Date>(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  return (
-    <View style={styles.clockContainer}>
-      <Text style={styles.clockText}>
-        {currentTime.toLocaleTimeString([], { 
-          hour: '2-digit', 
-          minute: '2-digit', 
-          second: '2-digit' 
-        })}
-      </Text>
-    </View>
-  );
-};
-
 const Time: React.FC = () => {
   const [coords, setCoords] = useState<CoordinatesType | null>(null);
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const { theme } = useTheme();
 
-  // Request location permissions and get user coordinates
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -69,7 +47,6 @@ const Time: React.FC = () => {
     })();
   }, []);
 
-  // Once we have the location, calculate prayer times for today
   useEffect(() => {
     if (coords) {
       const date = new Date();
@@ -80,7 +57,6 @@ const Time: React.FC = () => {
     }
   }, [coords]);
 
-  // Request notification permissions
   useEffect(() => {
     (async () => {
       const { status } = await Notifications.requestPermissionsAsync();
@@ -93,19 +69,44 @@ const Time: React.FC = () => {
     })();
   }, []);
 
-  // Helper function to format the time
   const formatTime = (dateObj: Date): string => {
     return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Function to schedule an alarm for a given prayer time
+  // Function to play Azan
+  const playAzan = async () => {
+    try {
+      const { sound } = await Audio.Sound.createAsync(azanAudio);
+      setSound(sound);
+      setIsPlaying(true);
+      await sound.playAsync();
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          setIsPlaying(false); // Hide Stop button when Azan ends
+        }
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to play Azan.');
+    }
+  };
+
+  // Function to stop Azan
+  const stopAzan = async () => {
+    if (sound) {
+      await sound.stopAsync();
+      setIsPlaying(false);
+    }
+  };
+
   const scheduleAlarm = async (prayerName: string, prayerTime: Date) => {
     const now = new Date();
     if (prayerTime <= now) {
       Alert.alert("Time Passed", `The time for ${prayerName} has already passed.`);
       return;
     }
+
     const triggerInSeconds = Math.floor((prayerTime.getTime() - now.getTime()) / 1000);
+
     try {
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -115,12 +116,19 @@ const Time: React.FC = () => {
         },
         trigger: { seconds: triggerInSeconds, repeats: false },
       });
+
+      // Play Azan when time arrives
+      setTimeout(() => {
+        playAzan();
+      }, triggerInSeconds * 1000);
+
       Alert.alert("Alarm Set", `${prayerName} alarm has been set.`);
     } catch (error) {
       Alert.alert("Error", "Failed to set alarm.");
     }
   };
 
+  // Create dynamic styles based on the current theme
   const dynamicStyles = useMemo(() => StyleSheet.create({
     container: {
       flexGrow: 1,
@@ -206,6 +214,12 @@ const Time: React.FC = () => {
       fontSize: 36 * scale,
       fontWeight: 'bold',
     },
+    stopButton: {
+      backgroundColor: 'red',
+      paddingVertical: 10 * scale,
+      borderRadius: 5 * scale,
+      marginTop: 20 * scale,
+    },
   }), [theme]);
 
   if (errorMsg) {
@@ -227,12 +241,8 @@ const Time: React.FC = () => {
 
   return (
     <ScrollView contentContainerStyle={dynamicStyles.container}>
-      {/* Modern Digital Clock Banner */}
-      <DigitalClock />
-
       <Text style={dynamicStyles.title}>Namaz Times</Text>
       
-      {/* Prayer Times */}
       {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map(prayer => {
         let timeValue: Date;
         switch (prayer) {
@@ -258,26 +268,14 @@ const Time: React.FC = () => {
           </View>
         );
       })}
+
+      {isPlaying && (
+        <TouchableOpacity style={dynamicStyles.stopButton} onPress={stopAzan}>
+          <Text style={dynamicStyles.buttonText}>Stop Azan</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  clockContainer: {
-    backgroundColor: '#008CBA',
-    borderRadius: 10 * scale,
-    paddingVertical: 20 * scale,
-    paddingHorizontal: 30 * scale,
-    marginVertical: 20 * scale,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '90%',
-  },
-  clockText: {
-    color: '#fff',
-    fontSize: 36 * scale,
-    fontWeight: 'bold',
-  },
-});
 
 export default Time;
