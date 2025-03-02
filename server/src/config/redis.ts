@@ -3,7 +3,7 @@ import { createClient } from 'redis';
 type RedisClientType = ReturnType<typeof createClient>;
 
 const redisClient: RedisClientType = createClient({
-  url: 'redis://red-cunmgldumphs73bof3q0:6379'
+  url: 'rediss://red-cv1vnq56l47c73fjjhfg:GnTfBkDF9Euef9AJjvUsnIWSCIOTslQ9@oregon-keyvalue.render.com:6379'
 });
 
 redisClient.on('error', (err) => {

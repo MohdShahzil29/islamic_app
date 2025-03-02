@@ -70,6 +70,15 @@ export default function Header() {
       <TouchableOpacity onPress={() => router.push("/(quran)/Quran")}>
         <Text style={[styles.menuItem, { color: theme.text }]}>Quran</Text>
       </TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push("/(pillar)/Pillars")}>
+        <Text style={[styles.menuItem, { color: theme.text }]}>Pillars of Islam </Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push("/(hajj)/Pilgrimage")}>
+        <Text style={[styles.menuItem, { color: theme.text }]}>Pilgrimage of Hajj</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push("/(ramzan)/Ramzan")}>
+        <Text style={[styles.menuItem, { color: theme.text }]}>Ramzan</Text>
+      </TouchableOpacity>
       <Text style={[styles.menuItem, { color: theme.text }]}>About</Text>
     </Animated.View>
     </View>

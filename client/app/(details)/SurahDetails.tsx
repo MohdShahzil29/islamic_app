@@ -48,7 +48,7 @@ const SurahDetails: React.FC = () => {
           setLoading(false);
           return;
         }
-        const response = await axios.get(`http://192.168.189.77:5000/api/surahs/getbyId/${id}`);
+        const response = await axios.get(`https://islamic-app-mf8e.onrender.com/api/surahs/getbyId/${id}`);
         setSurah(response.data.data);
         setLoading(false);
       } catch (err) {
