@@ -16,6 +16,7 @@ export default function RootLayout() {
       <Stack.Screen name="(pillar)/Pillars" options={{headerTransparent: true, headerTitle: "",}}/>
       <Stack.Screen name="(hajj)/Pilgrimage" options={{headerTransparent: true, headerTitle: "",}}/>
       <Stack.Screen name="(ramzan)/Ramzan" options={{headerTransparent: true, headerTitle: "",}}/>
+      <Stack.Screen name="(about)/About" options={{headerTransparent: true, headerTitle: "",}}/>
     </Stack>
     </ThemeProvider>
   );
