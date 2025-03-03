@@ -1,5 +1,5 @@
 {
-  "name": "client",
+  "name": "hikam",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -45,6 +45,7 @@
     "react-dom": "18.3.1",
     "react-native": "0.76.7",
     "react-native-blob-util": "^0.21.2",
+    "react-native-circular-progress": "^1.4.1",
     "react-native-gesture-handler": "~2.20.2",
     "react-native-pdf": "^6.7.7",
     "react-native-reanimated": "~3.16.1",
