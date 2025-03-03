@@ -226,7 +226,7 @@ export default function Home() {
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
       {/* Header with greeting */}
       <View style={dynamicStyles.header}>
-        <Text style={dynamicStyles.greeting}>Asslamualaikum</Text>
+        <Text style={dynamicStyles.greeting}>Surah list</Text>
       </View>
 
       {/* Fancy Search Bar Section */}
