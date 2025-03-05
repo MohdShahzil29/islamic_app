@@ -11,11 +11,11 @@ interface BoxItem {
 }
 
 const boxes: BoxItem[] = [
-  { id: 1, title: 'Ouran', route: '(quran)/Quran' },
-  { id: 2, title: 'Ouran With Audio', route: '(quranaudio)/QuranAudio' },
-  { id: 3, title: 'Allah Name', route: '(allah)/AllahName' },
+  { id: 1, title: 'Quran', route: '(quran)/Quran' },
+  { id: 2, title: 'Quran With Audio', route: '(quranaudio)/QuranAudio' },
+  { id: 3, title: 'Allah\'s Name', route: '(allah)/AllahName' },
   { id: 4, title: 'Surah', route: '(homelist)/Home' },
-  { id: 5, title: 'Pillars of Islam', route: '(pillar)/Pillars' },
+  { id: 5, title: 'Pillar of Islam', route: '(pillar)/Pillars' },
   { id: 6, title: 'Ramzan', route: '(ramzan)/Ramzan' },
 ];
 
