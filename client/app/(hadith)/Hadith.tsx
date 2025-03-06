@@ -1,415 +1,257 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  FlatList, 
-  TouchableOpacity, 
-  Modal, 
-  ScrollView, 
-  ActivityIndicator, 
-  Dimensions, 
-  TextInput
-} from 'react-native';
-import axios from 'axios';
-import { useLocalSearchParams } from 'expo-router';
-import { fontStyles } from '../../src/styles/fonts';
-import { useTheme } from '@/src/context/ThemeContext';
-import { Ionicons } from "@expo/vector-icons";
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  Modal,
+  Dimensions,
+} from "react-native";
+import { useRouter } from "expo-router";
+import axios from "axios";
+import { useTheme } from "@/src/context/ThemeContext";
+import { AntDesign } from "@expo/vector-icons";
 
-const { width, height } = Dimensions.get('window');
+const API_VERSION = "1";
+const BASE_URL = `https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@${API_VERSION}`;
 
-interface Hadith {
-  id: number;
-  hadithNumber: string;
-  englishNarrator: string;
-  hadithEnglish: string;
-  hadithUrdu: string;
-  urduNarrator: string;
-  hadithArabic: string;
-  headingArabic: string | null;
-  headingUrdu: string | null;
-  headingEnglish: string | null;
-  chapterId: string;
-  bookSlug: string;
-  volume: string;
-  status: string;
-  book: {
-    id: number;
-    bookName: string;
-    writerName: string;
-    aboutWriter: string | null;
-    writerDeath: string;
-    bookSlug: string;
-  };
-  chapter: {
-    id: number;
-    chapterNumber: string;
-    chapterEnglish: string;
-    chapterUrdu: string;
-    chapterArabic: string;
-    bookSlug: string;
-  };
+interface Edition {
+  id: string;
+  name: string;
 }
 
-interface Pagination {
-  current_page: number;
-  last_page: number;
-  next_page_url: string | null;
-  prev_page_url: string | null;
-}
+const { width } = Dimensions.get("window");
+const scale = width / 375; // Base width for scaling
 
-const HadithBook: React.FC = () => {
-  const { bookSlug } = useLocalSearchParams<{ bookSlug: string }>();
-  const [hadiths, setHadiths] = useState<Hadith[]>([]);
+const fetchDataWithFallback = async (
+  minUrl: string,
+  fallbackUrl: string
+): Promise<{ [key: string]: any }> => {
+  try {
+    const response = await axios.get(minUrl);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching minified URL:", error);
+    const response = await axios.get(fallbackUrl);
+    return response.data;
+  }
+};
+
+const darkTheme = {
+  background: "#121212",
+  text: "#E0E0E0",
+  card: "#1E1E1E",
+  border: "#333333",
+};
+
+const lightTheme = {
+  background: "#F5F5F5",
+  text: "#212121",
+  card: "#FFFFFF",
+  border: "#CCCCCC",
+};
+
+const Hadith: React.FC = () => {
+  const router = useRouter();
+  const [editions, setEditions] = useState<Edition[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selectedHadith, setSelectedHadith] = useState<Hadith | null>(null);
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState(""); 
-  // Only English, Urdu, and Arabic are supported.
-  const [selectedLanguage, setSelectedLanguage] = useState<'urdu' | 'english' | 'arabic'>('english');
-  const [pagination, setPagination] = useState<Pagination>({
-    current_page: 1,
-    last_page: 1,
-    next_page_url: null,
-    prev_page_url: null,
-  });
+  const { isDarkMode } = useTheme();
+  const [selectedEdition, setSelectedEdition] = useState<Edition | null>(null);
+  const [isModalVisible, setModalVisible] = useState<boolean>(false);
 
-  const { theme, isDarkMode } = useTheme();
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flex: 1,
+          backgroundColor: isDarkMode ? darkTheme.background : lightTheme.background,
+        },
+        header: {
+          marginHorizontal: 16 * scale,
+          marginTop: 16 * scale,
+          paddingVertical: 20 * scale,
+          paddingHorizontal: 16 * scale,
+          backgroundColor: isDarkMode ? darkTheme.card : lightTheme.card,
+          // Larger top border radii to mimic a curved roof
+          borderTopLeftRadius: 50 * scale,
+          borderTopRightRadius: 50 * scale,
+          // More subtle rounding at the bottom
+          borderBottomLeftRadius: 20 * scale,
+          borderBottomRightRadius: 20 * scale,
+          alignItems: "center",
+          justifyContent: "center",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 * scale },
+          shadowOpacity: 0.3,
+          shadowRadius: 4 * scale,
+          elevation: 5,
+        },
+        headerText: {
+          fontSize: 26 * scale,
+          fontWeight: "700",
+          color: isDarkMode ? darkTheme.text : lightTheme.text,
+          letterSpacing: 1,
+        },
+        headerDescription: {
+          fontSize: 16 * scale,
+          color: isDarkMode ? darkTheme.text : lightTheme.text,
+          textAlign: "center",
+          marginTop: 8 * scale,
+          fontStyle: "italic",
+          lineHeight: 22 * scale,
+        },
+        list: {
+          padding: 16 * scale,
+        },
+        itemContainer: {
+          backgroundColor: isDarkMode ? darkTheme.card : lightTheme.card,
+          padding: 16 * scale,
+          borderRadius: 8,
+          marginBottom: 12 * scale,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 * scale },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.84 * scale,
+          elevation: 5,
+        },
+        itemText: {
+          fontSize: 18 * scale,
+          color: isDarkMode ? darkTheme.text : lightTheme.text,
+        },
+        center: {
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: isDarkMode ? darkTheme.background : lightTheme.background,
+        },
+        modalContainer: {
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "rgba(0, 0, 0, 0.6)",
+        },
+        modalContent: {
+          backgroundColor: isDarkMode ? darkTheme.card : lightTheme.card,
+          padding: 20 * scale,
+          borderRadius: 10,
+          width: "80%",
+          alignItems: "center",
+        },
+        modalTitle: {
+          fontSize: 20 * scale,
+          fontWeight: "bold",
+          color: isDarkMode ? darkTheme.text : lightTheme.text,
+          marginBottom: 20 * scale,
+        },
+        modalButton: {
+          backgroundColor: "#007BFF",
+          padding: 12 * scale,
+          borderRadius: 5,
+          width: "100%",
+          alignItems: "center",
+          marginBottom: 10 * scale,
+        },
+        modalButtonText: {
+          color: "#FFF",
+          fontSize: 16 * scale,
+          fontWeight: "bold",
+        },
+        closeIcon: {
+          position: "absolute",
+          top: 10 * scale,
+          right: 10 * scale,
+        },
+      }),
+    [isDarkMode]
+  );
 
   useEffect(() => {
-    fetchHadiths(pagination.current_page);
-  }, [pagination.current_page]);
-
-  const fetchHadiths = async (page: number) => {
-    try {
-      const response = await axios.get<{ hadiths: { data: Hadith[], current_page: number, last_page: number, next_page_url: string | null, prev_page_url: string | null } }>(
-        `https://hadithapi.com/api/hadiths/?apiKey=$2y$10$bwLjjpIaC5FCMZIy4w9hBIvRBzxbALx9SPjCSwohfceOM2kb3X&page=${page}`
-      );
-      if (response.data.hadiths) {
-        setHadiths(response.data.hadiths.data);
-        setPagination({
-          current_page: response.data.hadiths.current_page,
-          last_page: response.data.hadiths.last_page,
-          next_page_url: response.data.hadiths.next_page_url,
-          prev_page_url: response.data.hadiths.prev_page_url,
-        });
+    const loadEditions = async () => {
+      const minUrl = `${BASE_URL}/editions.min.json`;
+      const fallbackUrl = `${BASE_URL}/editions.json`;
+      try {
+        const data = await fetchDataWithFallback(minUrl, fallbackUrl);
+        const editionList: Edition[] = Object.entries(data).map(([key, edition]) => ({
+          id: key,
+          name: edition.name,
+        }));
+        setEditions(editionList);
+      } catch (error) {
+        console.error("Error fetching editions:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching hadiths:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const openModal = (hadith: Hadith) => {
-    setSelectedHadith(hadith);
-    setModalVisible(true);
-  };
-
-  const closeModal = () => {
-    setSelectedHadith(null);
-    setModalVisible(false);
-  };
-
-  const getHadithTitle = (hadith: Hadith) => {
-    if (selectedLanguage === 'english' && hadith.headingEnglish) return hadith.headingEnglish;
-    if (selectedLanguage === 'urdu' && hadith.headingUrdu) return hadith.headingUrdu;
-    if (selectedLanguage === 'arabic' && hadith.headingArabic) return hadith.headingArabic;
-    return hadith.hadithEnglish.split(' ').slice(0, 3).join(' ');
-  };
-
-  const goToPage = (page: number) => {
-    if (page > 0 && page <= pagination.last_page) {
-      setLoading(true);
-      setPagination((prev) => ({ ...prev, current_page: page }));
-    }
-  };
-
-  const getHadithText = (hadith: Hadith) => {
-    switch (selectedLanguage) {
-      case 'urdu':
-        return hadith.hadithUrdu;
-      case 'arabic':
-        return hadith.hadithArabic;
-      case 'english':
-      default:
-        return hadith.hadithEnglish;
-    }
-  };
-
-  const getTextStyle = () => {
-    switch (selectedLanguage) {
-      case 'urdu':
-        return fontStyles.urduText;
-      case 'arabic':
-        return fontStyles.arabicText;
-      case 'english':
-      default:
-        return fontStyles.englishText;
-    }
-  };
-
-  const dynamicStyles = useMemo(() => StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.background,
-      paddingHorizontal: width * 0.05,
-      paddingTop: height * 0.03,
-    },
-    loader: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: theme.background,
-    },
-    heading: {
-      fontSize: width * 0.06,
-      fontWeight: 'bold',
-      textAlign: 'center',
-      color: theme.text,
-      marginBottom: height * 0.03,
-    },
-    card: {
-      backgroundColor: theme.card,
-      borderRadius: 12,
-      padding: width * 0.05,
-      marginVertical: height * 0.015,
-      shadowColor: theme.shadowColor || '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 5,
-      elevation: 2,
-    },
-    title: {
-      fontSize: width * 0.055,
-      fontWeight: 'bold',
-      color: theme.text,
-    },
-    pagination: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginVertical: height * 0.02,
-    },
-    pageButton: {
-      padding: width * 0.03,
-      backgroundColor: theme.primary,
-      borderRadius: 8,
-    },
-    pageButtonText: {
-      color: isDarkMode ? '#FFFFFF' : theme.buttonText,
-      fontWeight: 'bold',
-    },
-    pageInfo: {
-      fontSize: width * 0.045,
-      color: theme.text,
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    modalContainer: {
-      backgroundColor: theme.card,
-      width: '90%',
-      maxHeight: height * 0.8,
-      borderRadius: 12,
-      overflow: 'hidden',
-    },
-    modalScroll: {
-      padding: width * 0.05,
-      flexGrow: 1,
-    },
-    modalTitle: {
-      fontSize: width * 0.06,
-      fontWeight: 'bold',
-      marginBottom: height * 0.02,
-      color: theme.text,
-    },
-    modalText: {
-      fontSize: width * 0.045,
-      marginBottom: height * 0.02,
-      color: theme.text,
-    },
-    closeButton: {
-      marginTop: height * 0.02,
-      padding: width * 0.03,
-      backgroundColor: theme.primary,
-      borderRadius: 8,
-      alignItems: 'center',
-    },
-    closeButtonText: {
-      color: isDarkMode ? '#FFFFFF' : theme.buttonText,
-      fontWeight: 'bold',
-    },
-    languageButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      marginBottom: height * 0.02,
-    },
-    languageButton: {
-      padding: width * 0.03,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.primary,
-    },
-    selectedLanguageButton: {
-      backgroundColor: theme.primary,
-    },
-    languageButtonText: {
-      fontWeight: 'bold',
-      color: theme.text,
-    },
-    searchContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "#fff",
-      borderRadius: 25,
-      paddingHorizontal: 15,
-      paddingVertical: 8,
-      marginHorizontal: 15,
-      marginVertical: 10,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 5,
-      elevation: 3,
-    },
-    searchInput: {
-      flex: 1,
-      fontSize: 16,
-      color: "#5CE65C",
-      fontFamily: "Georgia",
-      marginLeft: 10,
-    },
-  }), [theme, isDarkMode]);
-
-  // Compute the filtered hadiths based on the search query.
-  const filteredHadiths = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return hadiths;
-    }
-    const query = searchQuery.toLowerCase();
-    return hadiths.filter((hadith) => {
-      const hadithNumber = hadith.hadithNumber.toLowerCase();
-      const headingEnglish = hadith.headingEnglish?.toLowerCase() || '';
-      const bookName = hadith.book.bookName?.toLowerCase() || '';
-      return (
-        hadithNumber.includes(query) ||
-        headingEnglish.includes(query) ||
-        bookName.includes(query)
-      );
-    });
-  }, [searchQuery, hadiths]);
+    };
+    loadEditions();
+  }, []);
 
   if (loading) {
     return (
-      <View style={dynamicStyles.loader}>
-        <ActivityIndicator size="large" color={theme.primary || "#4A90E2"} />
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={isDarkMode ? darkTheme.text : lightTheme.text} />
       </View>
     );
   }
 
+  const openLanguageModal = (item: Edition) => {
+    setSelectedEdition(item);
+    setModalVisible(true);
+  };
+
+  const selectLanguage = (lang: string) => {
+    if (selectedEdition) {
+      router.push({
+        pathname: "/(tab)/HadithsDetials",
+        params: { editionId: selectedEdition.id, lang },
+      });
+    }
+    setModalVisible(false);
+  };
+
+  const renderItem = ({ item }: { item: Edition }) => (
+    <TouchableOpacity style={styles.itemContainer} onPress={() => openLanguageModal(item)}>
+      <Text style={styles.itemText}>{item.name}</Text>
+    </TouchableOpacity>
+  );
+
   return (
-    <View style={dynamicStyles.container}>
-      <Text style={[dynamicStyles.heading, fontStyles.englishText]}>📖 Hadiths</Text>
-      <View style={dynamicStyles.searchContainer}>
-        <Ionicons name="search" size={20} color="#5CE65C" />
-        <TextInput
-          style={dynamicStyles.searchInput}
-          placeholder="Search Hadith"
-          placeholderTextColor="#999"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Hadith Books</Text>
+        <Text style={styles.headerDescription}>
+        Explore authentic hadith that echo timeless wisdom and guide your journey.
+        </Text>
       </View>
       <FlatList
-        data={filteredHadiths}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={dynamicStyles.card} onPress={() => openModal(item)}>
-            <Text style={[dynamicStyles.title, fontStyles.englishText]}>
-              {getHadithTitle(item)}
-            </Text>
-          </TouchableOpacity>
-        )}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={styles.list}
+        data={editions}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
       />
 
-      <View style={dynamicStyles.pagination}>
-        <TouchableOpacity
-          style={dynamicStyles.pageButton}
-          onPress={() => goToPage(pagination.current_page - 1)}
-          disabled={pagination.current_page <= 1}
-        >
-          <Text style={[dynamicStyles.pageButtonText, fontStyles.englishText]}>Previous</Text>
-        </TouchableOpacity>
-        <Text style={[dynamicStyles.pageInfo, fontStyles.englishText]}>
-          Page {pagination.current_page} of {pagination.last_page}
-        </Text>
-        <TouchableOpacity
-          style={dynamicStyles.pageButton}
-          onPress={() => goToPage(pagination.current_page + 1)}
-          disabled={pagination.current_page >= pagination.last_page}
-        >
-          <Text style={[dynamicStyles.pageButtonText, fontStyles.englishText]}>Next</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={closeModal}
-      >
-        <View style={dynamicStyles.modalOverlay}>
-          <View style={dynamicStyles.modalContainer}>
-            <ScrollView contentContainerStyle={dynamicStyles.modalScroll}>
-              {selectedHadith && (
-                <>
-                  <Text style={[dynamicStyles.modalTitle, getTextStyle()]}>
-                    {getHadithTitle(selectedHadith)}
-                  </Text>
-                  <View style={dynamicStyles.languageButtons}>
-                    <TouchableOpacity
-                      style={[
-                        dynamicStyles.languageButton,
-                        selectedLanguage === 'urdu' && dynamicStyles.selectedLanguageButton,
-                      ]}
-                      onPress={() => setSelectedLanguage('urdu')}
-                    >
-                      <Text style={[dynamicStyles.languageButtonText, fontStyles.urduText]}>Urdu</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        dynamicStyles.languageButton,
-                        selectedLanguage === 'english' && dynamicStyles.selectedLanguageButton,
-                      ]}
-                      onPress={() => setSelectedLanguage('english')}
-                    >
-                      <Text style={[dynamicStyles.languageButtonText, fontStyles.englishText]}>English</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        dynamicStyles.languageButton,
-                        selectedLanguage === 'arabic' && dynamicStyles.selectedLanguageButton,
-                      ]}
-                      onPress={() => setSelectedLanguage('arabic')}
-                    >
-                      <Text style={[dynamicStyles.languageButtonText, fontStyles.arabicText]}>Arabic</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={[dynamicStyles.modalText, getTextStyle()]}>
-                    {getHadithText(selectedHadith)}
-                  </Text>
-                  <TouchableOpacity style={dynamicStyles.closeButton} onPress={closeModal}>
-                    <Text style={[dynamicStyles.closeButtonText, fontStyles.englishText]}>Close</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </ScrollView>
+      {/* Language Selection Modal */}
+      <Modal visible={isModalVisible} transparent animationType="fade">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.closeIcon} onPress={() => setModalVisible(false)}>
+              <AntDesign
+                name="closecircle"
+                size={24 * scale}
+                color={isDarkMode ? "#E0E0E0" : "#333"}
+              />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Language</Text>
+            <TouchableOpacity style={styles.modalButton} onPress={() => selectLanguage("eng")}>
+              <Text style={styles.modalButtonText}>English</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalButton} onPress={() => selectLanguage("ara")}>
+              <Text style={styles.modalButtonText}>Arabic</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalButton} onPress={() => selectLanguage("urd")}>
+              <Text style={styles.modalButtonText}>Urdu</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -417,4 +259,4 @@ const HadithBook: React.FC = () => {
   );
 };
 
-export default HadithBook;
+export default Hadith;

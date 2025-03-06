@@ -13,6 +13,7 @@ export default function HomePage() {
       <View style={styles.content}>
         <Banner />
         <HomeLoading />
+        {/* <Hadith /> */}
         {/* <Home /> */}
       </View>
       <Footer />

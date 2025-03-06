@@ -7,13 +7,16 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
-  Dimensions
+  Dimensions,
+  Platform
 } from 'react-native';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import { PrayerTimes, CalculationMethod, Coordinates } from 'adhan';
 import { useTheme } from '@/src/context/ThemeContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+// Replace the imported tone with another Islamic alarm tone file:
+import adhanTone from '@/assets/adhanTone.mp3';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const scale = SCREEN_WIDTH / 375;
@@ -27,6 +30,7 @@ const Time: React.FC = () => {
   const [coords, setCoords] = useState<CoordinatesType | null>(null);
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [setAlarms, setSetAlarms] = useState<{ [key: string]: boolean }>({});
   const { theme } = useTheme();
 
   // Request location permission and fetch current position
@@ -56,7 +60,7 @@ const Time: React.FC = () => {
     }
   }, [coords]);
 
-  // Request notification permissions
+  // Request notification permissions and setup Android notification channel
   useEffect(() => {
     (async () => {
       const { status } = await Notifications.requestPermissionsAsync();
@@ -65,6 +69,15 @@ const Time: React.FC = () => {
           'Permission required',
           'Please enable notifications to use alarm features.'
         );
+      }
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+          sound: 'adhanTone.mp3', // Use the new tone filename here
+        });
       }
     })();
   }, []);
@@ -82,6 +95,11 @@ const Time: React.FC = () => {
       return;
     }
 
+    if (setAlarms[prayerName]) {
+      Alert.alert("Alarm Already Set", `The alarm for ${prayerName} has already been set.`);
+      return;
+    }
+
     // Calculate delay in seconds from now until prayer time.
     const triggerInSeconds = Math.floor((prayerTime.getTime() - now.getTime()) / 1000);
 
@@ -90,12 +108,11 @@ const Time: React.FC = () => {
         content: {
           title: `${prayerName} Alarm`,
           body: `It's time for ${prayerName} prayer.`,
-          // Custom sound: For iOS, include the sound file in your app bundle.
-          // For Android, ensure the file is placed in res/raw and named in lowercase.
-          sound: 'azan2.mp3',
+          sound: 'adhanTone.mp3', // Updated to new tone filename
         },
         trigger: { seconds: triggerInSeconds, repeats: false },
       });
+      setSetAlarms((prev) => ({ ...prev, [prayerName]: true }));
       Alert.alert("Alarm Set", `${prayerName} alarm has been set.`);
     } catch (error) {
       Alert.alert("Error", "Failed to set alarm.");
@@ -224,7 +241,9 @@ const Time: React.FC = () => {
               onPress={() => scheduleAlarm(prayer, timeValue)}
             >
               <Icon name="alarm" size={20} color="#fff" style={dynamicStyles.icon} />
-              <Text style={dynamicStyles.buttonText}>Set Alarm</Text>
+              <Text style={dynamicStyles.buttonText}>
+                {setAlarms[prayer] ? 'Alarm Set' : 'Set Alarm'}
+              </Text>
             </TouchableOpacity>
           </View>
         );
