@@ -71,7 +71,7 @@ const Quran: React.FC = () => {
   const fetchPage = async (pageNumber: number) => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://api.alquran.cloud/v1/page/${pageNumber}/quran-uthmani`);
+      const response = await axios.get(`https://api.alquran.cloud/v1/page/${pageNumber}/quran-uthmani`);
       if (response.data && response.data.data) {
         setPageData(response.data.data);
       }

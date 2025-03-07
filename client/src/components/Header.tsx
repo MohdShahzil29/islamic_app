@@ -76,7 +76,7 @@ export default function Header() {
         <Text style={[styles.menuItem, { color: theme.text }]}>Pilgrimage of Hajj</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.push("/(ramzan)/Ramzan")}>
-        <Text style={[styles.menuItem, { color: theme.text }]}>Ramzan</Text>
+        <Text style={[styles.menuItem, { color: theme.text }]}>Ramadan</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.push("/(quranaudio)/QuranAudio")}>
         <Text style={[styles.menuItem, { color: theme.text }]}>Qura With audio</Text>

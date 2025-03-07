@@ -58,7 +58,7 @@ const QuranAudio: React.FC = () => {
     setLoading(true);
     try {
       const response = await axios.get<QuranAudioData>(
-        'http://api.alquran.cloud/v1/quran/ar.alafasy'
+        'https://api.alquran.cloud/v1/quran/ar.alafasy'
       );
       if (response.data && response.data.data) {
         setData(response.data.data);

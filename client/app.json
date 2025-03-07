@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Hikam",
-    "slug": "Hikam",
+    "slug": "hikam",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.jpeg",
@@ -9,13 +9,18 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mohdshahzil.Hikam",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.jpeg",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.mohdshahzil.Hikam"
     },
     "web": {
       "bundler": "metro",
@@ -43,6 +48,14 @@
       "Roboto": "./assets/fonts/Roboto-Regular.ttf",
       "Roboto-Medium": "./assets/fonts/Roboto-Medium.ttf",
       "Roboto-Bold": "./assets/fonts/Roboto-Bold.ttf"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "876620d3-98e3-40b2-aa96-8ad029cfc580"
+      }
     }
   }
 }

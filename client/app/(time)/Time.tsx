@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -12,11 +12,10 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PrayerTimes, CalculationMethod, Coordinates } from 'adhan';
 import { useTheme } from '@/src/context/ThemeContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-// Replace the imported tone with another Islamic alarm tone file:
-import adhanTone from '@/assets/adhanTone.mp3';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const scale = SCREEN_WIDTH / 375;
@@ -26,14 +25,58 @@ interface CoordinatesType {
   longitude: number;
 }
 
+interface AlarmsType {
+  [key: string]: string | null;
+}
+
 const Time: React.FC = () => {
   const [coords, setCoords] = useState<CoordinatesType | null>(null);
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [setAlarms, setSetAlarms] = useState<{ [key: string]: boolean }>({});
+  // Store notification ID per prayer; if null, no alarm is set
+  const [alarms, setAlarms] = useState<AlarmsType>({});
   const { theme } = useTheme();
 
-  // Request location permission and fetch current position
+  // Refs for current state
+  const alarmsRef = useRef<AlarmsType>(alarms);
+  const prayerTimesRef = useRef<PrayerTimes | null>(prayerTimes);
+
+  useEffect(() => {
+    alarmsRef.current = alarms;
+  }, [alarms]);
+
+  useEffect(() => {
+    prayerTimesRef.current = prayerTimes;
+  }, [prayerTimes]);
+
+  // Load alarms from storage on mount
+  useEffect(() => {
+    const loadAlarms = async () => {
+      try {
+        const savedAlarms = await AsyncStorage.getItem('setAlarms');
+        if (savedAlarms) {
+          setAlarms(JSON.parse(savedAlarms));
+        }
+      } catch (error) {
+        console.error('Failed to load alarms:', error);
+      }
+    };
+    loadAlarms();
+  }, []);
+
+  // Save alarms to storage whenever they change
+  useEffect(() => {
+    const saveAlarms = async () => {
+      try {
+        await AsyncStorage.setItem('setAlarms', JSON.stringify(alarms));
+      } catch (error) {
+        console.error('Failed to save alarms:', error);
+      }
+    };
+    saveAlarms();
+  }, [alarms]);
+
+  // Request location permissions and get coordinates
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -49,7 +92,7 @@ const Time: React.FC = () => {
     })();
   }, []);
 
-  // Calculate prayer times based on current location and date
+  // Calculate prayer times based on coordinates
   useEffect(() => {
     if (coords) {
       const date = new Date();
@@ -60,7 +103,17 @@ const Time: React.FC = () => {
     }
   }, [coords]);
 
-  // Request notification permissions and setup Android notification channel
+  // Configure notifications
+  useEffect(() => {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+  }, []);
+
   useEffect(() => {
     (async () => {
       const { status } = await Notifications.requestPermissionsAsync();
@@ -76,50 +129,89 @@ const Time: React.FC = () => {
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
           lightColor: '#FF231F7C',
-          sound: 'adhanTone.mp3', // Use the new tone filename here
         });
       }
     })();
   }, []);
 
-  // Helper function to format the time display
+  // Format time to hh:mm format
   const formatTime = (dateObj: Date): string => {
     return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Schedule alarm using native notifications so it works even if the app is closed.
+  // Schedule a one-time notification using an absolute date trigger
   const scheduleAlarm = async (prayerName: string, prayerTime: Date) => {
     const now = new Date();
-    if (prayerTime <= now) {
-      Alert.alert("Time Passed", `The time for ${prayerName} has already passed.`);
-      return;
+    let scheduledTime = new Date(prayerTime);
+  
+    // Calculate difference in seconds between the prayer time and now
+    let diffSeconds = (scheduledTime.getTime() - now.getTime()) / 1000;
+  
+    // If the prayer time is in the past, schedule for the next occurrence
+    if (diffSeconds < 0) {
+      scheduledTime.setDate(scheduledTime.getDate() + 1);
+      diffSeconds = (scheduledTime.getTime() - now.getTime()) / 1000;
     }
-
-    if (setAlarms[prayerName]) {
-      Alert.alert("Alarm Already Set", `The alarm for ${prayerName} has already been set.`);
-      return;
+  
+    // If the prayer time is within 60 seconds, inform the user
+    if (diffSeconds < 60) {
+      return Alert.alert(
+        'Immediate Notification',
+        `The time for ${prayerName} is too close. The notification will be immediate.`
+      );
     }
-
-    // Calculate delay in seconds from now until prayer time.
-    const triggerInSeconds = Math.floor((prayerTime.getTime() - now.getTime()) / 1000);
-
+  
+    const triggerInSeconds = Math.floor(diffSeconds);
+  
+    console.log('Now:', now.toString());
+    console.log('Prayer time:', prayerTime.toString());
+    console.log('Scheduled time:', scheduledTime.toString());
+    console.log('Seconds until alarm:', triggerInSeconds);
+  
     try {
-      await Notifications.scheduleNotificationAsync({
+      const notificationId = await Notifications.scheduleNotificationAsync({
         content: {
           title: `${prayerName} Alarm`,
           body: `It's time for ${prayerName} prayer.`,
-          sound: 'adhanTone.mp3', // Updated to new tone filename
+          data: { prayerName },
         },
         trigger: { seconds: triggerInSeconds, repeats: false },
       });
-      setSetAlarms((prev) => ({ ...prev, [prayerName]: true }));
-      Alert.alert("Alarm Set", `${prayerName} alarm has been set.`);
+      setAlarms((prev) => ({ ...prev, [prayerName]: notificationId }));
+      Alert.alert(
+        "Alarm Set",
+        `${prayerName} alarm set for ${scheduledTime.toLocaleTimeString()}.`
+      );
     } catch (error) {
+      console.error("Failed to set alarm:", error);
       Alert.alert("Error", "Failed to set alarm.");
     }
   };
+  
 
-  // Dynamic styles based on the current theme.
+  // Cancel the scheduled notification for a prayer
+  const cancelAlarm = async (prayerName: string) => {
+    const notificationId = alarms[prayerName];
+    if (notificationId && typeof notificationId === 'string') {
+      try {
+        const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+        const isScheduled = scheduled.some(item => item.identifier === notificationId);
+        if (isScheduled) {
+          await Notifications.cancelScheduledNotificationAsync(notificationId);
+        }
+        setAlarms((prev) => ({ ...prev, [prayerName]: null }));
+        Alert.alert("Alarm Stopped", `${prayerName} alarm has been stopped.`);
+      } catch (error) {
+        console.error("Error cancelling alarm:", error);
+        setAlarms((prev) => ({ ...prev, [prayerName]: null }));
+        Alert.alert("Alarm Stopped", `${prayerName} alarm has been stopped.`);
+      }
+    } else {
+      setAlarms((prev) => ({ ...prev, [prayerName]: null }));
+      Alert.alert("Alarm Stopped", `${prayerName} alarm has been stopped.`);
+    }
+  };
+
   const dynamicStyles = useMemo(() => StyleSheet.create({
     container: {
       flexGrow: 1,
@@ -219,7 +311,7 @@ const Time: React.FC = () => {
   return (
     <ScrollView contentContainerStyle={dynamicStyles.container}>
       <Text style={dynamicStyles.title}>Namaz Times</Text>
-      {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map(prayer => {
+      {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((prayer) => {
         let timeValue: Date;
         switch (prayer) {
           case 'Fajr': timeValue = prayerTimes.fajr; break;
@@ -229,6 +321,7 @@ const Time: React.FC = () => {
           case 'Isha': timeValue = prayerTimes.isha; break;
           default: timeValue = new Date();
         }
+
         return (
           <View key={prayer} style={dynamicStyles.prayerContainer}>
             <View style={dynamicStyles.row}>
@@ -236,15 +329,23 @@ const Time: React.FC = () => {
               <Text style={dynamicStyles.prayerName}>{prayer}:</Text>
               <Text style={dynamicStyles.prayerTime}>{formatTime(timeValue)}</Text>
             </View>
-            <TouchableOpacity
-              style={dynamicStyles.button}
-              onPress={() => scheduleAlarm(prayer, timeValue)}
-            >
-              <Icon name="alarm" size={20} color="#fff" style={dynamicStyles.icon} />
-              <Text style={dynamicStyles.buttonText}>
-                {setAlarms[prayer] ? 'Alarm Set' : 'Set Alarm'}
-              </Text>
-            </TouchableOpacity>
+            {alarms[prayer] ? (
+              <TouchableOpacity
+                style={dynamicStyles.button}
+                onPress={() => cancelAlarm(prayer)}
+              >
+                <Icon name="alarm-off" size={20} color="#fff" style={dynamicStyles.icon} />
+                <Text style={dynamicStyles.buttonText}>Stop Alarm</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={dynamicStyles.button}
+                onPress={() => scheduleAlarm(prayer, timeValue)}
+              >
+                <Icon name="alarm" size={20} color="#fff" style={dynamicStyles.icon} />
+                <Text style={dynamicStyles.buttonText}>Set Alarm</Text>
+              </TouchableOpacity>
+            )}
           </View>
         );
       })}

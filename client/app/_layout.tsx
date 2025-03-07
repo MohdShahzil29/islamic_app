@@ -21,6 +21,7 @@ export default function RootLayout() {
       <Stack.Screen name="(homelist)/Home" options={{headerTransparent: true, headerTitle: "", headerBackVisible: false,}}/>
       <Stack.Screen name="(allah)/AllahName" options={{headerTransparent: true, headerTitle: "",}}/>
       <Stack.Screen name="(tab)/HadithsDetials" options={{headerTransparent: true, headerTitle: "",  headerBackVisible: false,}}/>
+      <Stack.Screen name="(tasbih)/Tasbih" options={{headerTransparent: true, headerTitle: "",  headerBackVisible: false,}}/>
     </Stack>
     </ThemeProvider>
   );
